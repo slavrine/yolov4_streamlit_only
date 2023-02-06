@@ -1,0 +1,13 @@
+av
+matplotlib
+opencv-python-headless
+lxml
+tqdm
+tensorflow
+absl-py
+easydict
+pillow
+pytesseract
+streamlit  
+gdown
+pathlib

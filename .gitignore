@@ -1,0 +1,9 @@
+*.jpg
+*.jpeg
+*.mpg4
+*.mpeg
+*.avi
+*.png
+*.mp4
+checkpoints/
+
