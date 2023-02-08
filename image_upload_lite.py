@@ -8,7 +8,7 @@ import gdown
 import zipfile
 from pathlib import Path
 
-from memory_profiler import profile
+# from memory_profiler import profile
 
 
 # comment out below line to enable tensorflow outputs
@@ -98,16 +98,13 @@ def download_file_from_google_drive(id,
 
 
 @st.cache
-def load_model():
-
-    f_checkpoint = Path("./checkpoints/custom-608")
+def load_model(f_checkpoint, id=''):
     if not f_checkpoint.exists():
-        id = st.text_input('google drive folder id', '')
         with st.spinner("Downloading model... this may take awhile! \n Don't stop it!"):
             download_file_from_google_drive(id=id,
                                     destination = 'checkpoints/')
 
-    model = tf.saved_model.load('./checkpoints/custom-608', tags=[tag_constants.SERVING])
+    model = tf.saved_model.load(str(f_checkpoint), tags=[tag_constants.SERVING])
     return model
 
 def predict_video (saved_model_loaded, video):
@@ -279,27 +276,31 @@ def predict_image (saved_model_loaded, image):
     # image = cv2.cvtColor(np.array(image), cv2.COLOR_BGR2RGB)
     # cv2.imwrite('./detections/' + 'detection' + str(1) + '.png', image)
 
-@profile(precision=4)
+# @profile(precision=4)
 def main():
     st.title('Pretrained model demo')
-    with st.spinner('Heating up the model...'):
-        model = load_model()
-    option = st.selectbox('Plz select a file?', ('Image', 'Video'))
+    f_checkpoint = Path("./checkpoints/custom-608")
+    id = st.text_input('google drive folder id')
 
-    if option=='Image':
-        original_image = load_image()
-        result = st.button('Run on file')
-        if result:
-            st.write('Calculating results...')
-            predict_image(model, original_image)
+    if id != '':
+        with st.spinner('Heating up the model...'):
+            model = load_model(f_checkpoint, id)
+        option = st.selectbox('Plz select a file?', ('Image', 'Video'))
 
-    if option == 'Video':
-        with st.spinner('loading video...'):
-            original_video = load_video()
-        result = st.button('Run on file')
-        if result:
-            with st.spinner('Calculating results...'):
-                predict_video(model, original_video)
+        if option=='Image':
+            original_image = load_image()
+            result = st.button('Run on file')
+            if result:
+                st.write('Calculating results...')
+                predict_image(model, original_image)
+
+        if option == 'Video':
+            with st.spinner('loading video...'):
+                original_video = load_video()
+            result = st.button('Run on file')
+            if result:
+                with st.spinner('Calculating results...'):
+                    predict_video(model, original_video)
 
 if __name__ == '__main__':
     main()
