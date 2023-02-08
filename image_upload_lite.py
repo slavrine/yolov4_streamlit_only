@@ -8,6 +8,9 @@ import gdown
 import zipfile
 from pathlib import Path
 
+from memory_profiler import profile
+
+
 # comment out below line to enable tensorflow outputs
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
@@ -95,12 +98,11 @@ def download_file_from_google_drive(id,
 
 
 @st.cache
-def load_model(id):
-   
+def load_model():
 
     f_checkpoint = Path("./checkpoints/custom-608")
-
     if not f_checkpoint.exists():
+        id = st.text_input('google drive folder id', '')
         with st.spinner("Downloading model... this may take awhile! \n Don't stop it!"):
             download_file_from_google_drive(id=id,
                                     destination = 'checkpoints/')
@@ -196,7 +198,7 @@ def predict_video (saved_model_loaded, video):
         frame_av = av.VideoFrame.from_ndarray(image, format='bgr24')  # Convert image from NumPy Array to frame.
         packet = stream.encode(frame_av)  # Encode video frame
         output.mux(packet)
-        cv2.imwrite('./detections/' + 'crop/' + 'imgs_for_lable/' + str(frame_num) + '.png', image)
+        # cv2.imwrite('./detections/' + 'crop/' + 'imgs_for_lable/' + str(frame_num) + '.png', image)
 
         # result = np.asarray(image)
         #
@@ -216,7 +218,6 @@ def predict_video (saved_model_loaded, video):
     st.download_button('Processed_Video', output_memory_file, file_name='Processed_Video.mp4',
                        mime=None, key=None, help=None, on_click=None, args=None,
                        kwargs=None)
-
 
 def predict_image (saved_model_loaded, image):
     config = ConfigProto()
@@ -275,31 +276,31 @@ def predict_image (saved_model_loaded, image):
     image = Image.fromarray(image.astype(np.uint8))
 
     st.image(image)
-    image = cv2.cvtColor(np.array(image), cv2.COLOR_BGR2RGB)
-    cv2.imwrite('./detections/' + 'detection' + str(1) + '.png', image)
+    # image = cv2.cvtColor(np.array(image), cv2.COLOR_BGR2RGB)
+    # cv2.imwrite('./detections/' + 'detection' + str(1) + '.png', image)
 
+@profile(precision=4)
 def main():
     st.title('Pretrained model demo')
-    id = st.text_input('google drive folder id', '')
-    if id != '':
-        with st.spinner('Heating up the model...'):
-            model = load_model(id)
-        option = st.selectbox('Plz select a file?', ('Image', 'Video'))
+    with st.spinner('Heating up the model...'):
+        model = load_model()
+    option = st.selectbox('Plz select a file?', ('Image', 'Video'))
 
-        if option=='Image':
-            original_image = load_image()
-            result = st.button('Run on file')
-            if result:
-                st.write('Calculating results...')
-                predict_image(model, original_image)
+    if option=='Image':
+        original_image = load_image()
+        result = st.button('Run on file')
+        if result:
+            st.write('Calculating results...')
+            predict_image(model, original_image)
 
-        if option == 'Video':
-            with st.spinner('loading video...'):
-                original_video = load_video()
-            result = st.button('Run on file')
-            if result:
-                with st.spinner('Calculating results...'):
-                    predict_video(model, original_video)
+    if option == 'Video':
+        with st.spinner('loading video...'):
+            original_video = load_video()
+        result = st.button('Run on file')
+        if result:
+            with st.spinner('Calculating results...'):
+                predict_video(model, original_video)
 
 if __name__ == '__main__':
     main()
+
